@@ -1,0 +1,38 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <string.h>
+
+int main() {
+    int myPipe[2], bytesRead;
+    pid_t childpid;
+    char readBuffer[50], writeBuffer[] = "파이프 : ";
+
+    if (pipe(myPipe) < 0) {
+        perror("파이프 생성 실패");
+        exit(1);
+    }
+
+    if ((childpid = fork()) < 0) {
+        perror("프로세스 생성 실패");
+        exit(1);
+    }
+
+    if (childpid == 0) {
+        close(myPipe[1]); // 쓰기
+        bytesRead = read(myPipe[0], readBuffer, sizeof(readBuffer));
+        if (bytesRead > 0) {
+            printf("자식이 받은 메시지: %s\n", readBuffer);
+        } else {
+            printf("자식이 메시지를 읽지 못함\n");
+        }
+        close(myPipe[0]); // 읽기
+    } else {
+        close(myPipe[0]);
+        write(myPipe[1], writeBuffer, strlen(writeBuffer) + 1);
+        close(myPipe[1]);
+        wait(NULL);   }
+
+    return 0;
+}
